@@ -3,141 +3,11 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>StudyTrophy - 管理中心</title>
+    <title>StudyTrophy - 學習管理中心</title>
     <link rel="stylesheet" href="css/style.css">
-    <style>
-        /* 這裡放一些基礎佈局，建議之後移到 style.css */
-        :root {
-            --bg-color: #f4f7f6;
-            --card-bg: #ffffff;
-        }
-
-        body {
-            font-family: "Microsoft JhengHei", sans-serif;
-            background: var(--bg-color);
-            margin: 0;
-            padding: 20px;
-        }
-
-        nav {
-            margin-bottom: 20px;
-            text-align: center;
-        }
-
-        nav a {
-            margin: 0 15px;
-            text-decoration: none;
-            color: #333;
-            font-weight: bold;
-        }
-
-        .container {
-            display: flex;
-            gap: 20px;
-            flex-wrap: wrap;
-        }
-
-        /* 課表樣式 */
-        .schedule-section {
-            flex: 2;
-            min-width: 400px;
-            background: var(--card-bg);
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-        }
-
-        th,
-        td {
-            border: 1px solid #ddd;
-            padding: 10px;
-            text-align: center;
-        }
-
-        th {
-            background: #eee;
-        }
-
-        .editable-cell:hover {
-            background: #fffde7;
-            cursor: pointer;
-        }
-
-        /* 獎盃牆樣式 */
-        .trophy-section {
-            flex: 1;
-            min-width: 300px;
-            background: var(--card-bg);
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        .trophy-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-            gap: 15px;
-            margin-top: 15px;
-        }
-
-        /* 獎盃容器疊加文字 */
-        .trophy-item {
-            position: relative;
-            text-align: center;
-        }
-
-        .trophy-img {
-            width: 100px;
-            height: 100px;
-            transition: filter 0.3s;
-        }
-
-        .subject-label {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-weight: bold;
-            pointer-events: none;
-        }
-
-        /* 獎盃濾鏡狀態 */
-        .locked {
-            filter: grayscale(1) opacity(0.3);
-        }
-
-        .bronze {
-            filter: sepia(1) saturate(3) hue-rotate(-30deg);
-        }
-
-        .silver {
-            filter: grayscale(1) brightness(1.2);
-        }
-
-        .gold {
-            filter: drop-shadow(0 0 8px gold);
-        }
-
-        .btn-add {
-            background: #4caf50;
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-    </style>
 </head>
 
 <body>
-
     <nav>
         <a href="index.html">📅 課表進度</a>
         <a href="tomato.html">🍅 番茄鐘</a>
@@ -145,13 +15,12 @@
     </nav>
 
     <div class="container">
-        <!-- 左側：課表區 -->
         <section class="schedule-section">
-            <h2>📅 我的課表</h2>
-            <table id="schedule-table">
+            <h2>📅 課表</h2>
+            <table>
                 <thead>
                     <tr>
-                        <th>節次</th>
+                        <th>節次 / 時間</th>
                         <th>一</th>
                         <th>二</th>
                         <th>三</th>
@@ -159,52 +28,40 @@
                         <th>五</th>
                     </tr>
                 </thead>
-                <tbody id="schedule-body">
-                    <!-- 由 JS 動態生成 -->
-                </tbody>
+                <tbody id="schedule-body"></tbody>
             </table>
         </section>
 
-        <!-- 右側：獎盃管理區 -->
         <section class="trophy-section">
             <h2>🏆 獎盃牆</h2>
             <button class="btn-add" onclick="showAddSubjectModal()">＋ 新增科目目標</button>
-            <div id="trophy-grid" class="trophy-grid">
-                <!-- 由 JS 根據 localStorage 渲染 -->
-            </div>
-            <div class="admin-controls" style="margin-top: 30px; border-top: 1px inset #eee; padding-top: 20px;">
+            <div id="trophy-grid" class="trophy-grid"></div>
+
+            <!-- [功能恢復] 清除按鍵區 -->
+            <div class="admin-controls" style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px;">
                 <button onclick="clearStudyLogs()" class="btn-outline">🗑️ 清除讀書紀錄</button>
-                <button onclick="resetEverything()" class="btn-danger">⚠️ 重設系統(會清除所有資料)</button>
+                <button onclick="resetEverything()" class="btn-danger">⚠️ 重設整個系統</button>
             </div>
         </section>
     </div>
 
-    <!-- 新增科目的簡單 Modal (隱藏狀態) -->
-    <div id="add-modal"
-        style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:white; padding:30px; border-radius:10px; box-shadow:0 0 20px rgba(0,0,0,0.5); z-index:100;">
-        <h3>新增科目範圍</h3>
-        <input type="text" id="new-subject-name" placeholder="科目名稱 (如: 國語)"><br><br>
-        <input type="number" id="new-subject-start" placeholder="起始頁碼"><br><br>
-        <input type="number" id="new-subject-end" placeholder="目標頁碼"><br><br>
-        <button onclick="addSubject()">確認新增</button>
+    <!-- 新增科目彈窗 -->
+    <div id="add-modal" class="modal" style="display:none;">
+        <h3>新增科目目標</h3>
+        <label>選擇科目 (來自課表):</label><br>
+        <select id="new-subject-name" style="width:100%; padding:8px;"></select><br><br>
+        <input type="text" id="new-subject-start" placeholder="起始 (如: 1 或 第一章)"><br><br>
+        <input type="text" id="new-subject-end" placeholder="目標 (如: 70 或 第五章)"><br><br>
+        <button onclick="addSubject()">儲存</button>
         <button onclick="hideModal()">取消</button>
     </div>
 
     <script src="js/main.js"></script>
     <script>
-        // 頁面加載時執行渲染
         window.onload = () => {
-            initSchedule(); // 初始化課表
-            renderTrophies(); // 渲染獎盃
+            initSchedule();
+            renderTrophies();
         };
-
-        function showAddSubjectModal() {
-            document.getElementById('add-modal').style.display = 'block';
-        }
-
-        function hideModal() {
-            document.getElementById('add-modal').style.display = 'none';
-        }
     </script>
 </body>
 

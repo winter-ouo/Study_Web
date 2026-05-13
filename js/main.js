@@ -1,118 +1,27 @@
-// 1. 初始化資料庫 (LocalStorage)
-// 包含科目、課表、以及讀書紀錄
+// 核心資料結構：整合自訂節次與行事曆
 let studyData = JSON.parse(localStorage.getItem('studyTrophyData')) || {
-    subjects: [], // 格式: { id, name, start, end, current }
-    schedule: Array(8).fill(null).map(() => Array(5).fill('')), // 8節課 x 5天
-    logs: [] // 儲存番茄鐘紀錄
+    settings: {
+        totalWeeks: 18,
+        timeSlots: [
+            { label: "1", time: "08:10~09:00" }, { label: "2", time: "09:10~10:00" },
+            { label: "3", time: "10:10~11:00" }, { label: "4", time: "11:10~12:00" },
+            { label: "午", time: "12:00~13:10" }, { label: "5", time: "13:10~14:00" },
+            { label: "6", time: "14:10~15:00" }, { label: "7", time: "15:10~16:00" },
+            { label: "8", time: "16:10~17:00" }, { label: "9", time: "17:10~18:00" },
+            { label: "10", time: "18:05~18:55" }, { label: "11", time: "19:00~19:50" },
+            { label: "12", time: "19:55~20:45" }, { label: "13", time: "20:50~21:40" }
+        ]
+    },
+    subjects: [],
+    schedule: {},
+    logs: []
 };
 
-// 2. 儲存資料到 LocalStorage
 function saveData() {
     localStorage.setItem('studyTrophyData', JSON.stringify(studyData));
 }
 
-// 3. 渲染獎盃牆 (動態疊加文字與濾鏡)
-function renderTrophies() {
-    const grid = document.getElementById('trophy-grid');
-    if (!grid) return;
-    grid.innerHTML = '';
-
-    studyData.subjects.forEach(sub => {
-        // 計算進度百分比
-        const totalPages = sub.end - sub.start;
-        const progressPages = sub.current - sub.start;
-        let percent = totalPages > 0 ? (progressPages / totalPages) * 100 : 0;
-
-        // 防呆：進度不超過 100% 且不低於 0%
-        percent = Math.min(Math.max(percent, 0), 100);
-
-        // 決定獎盃等級 (對應 CSS 濾鏡類別)
-        let trophyClass = 'locked';
-        if (percent >= 100) trophyClass = 'gold'; // 100% 金色
-        else if (percent >= 66) trophyClass = 'silver'; // 2/3 銀色
-        else if (percent >= 33) trophyClass = 'bronze'; // 1/3 銅色
-
-        const item = document.createElement('div');
-        item.className = 'trophy-item';
-        item.innerHTML = `
-            <img src="assets/trophy.png" class="trophy-img ${trophyClass}" alt="${sub.name}進度獎盃">
-            <span class="subject-label">${sub.name.substring(0, 2)}</span>
-            <p><strong>${sub.name}</strong><br>${sub.current} / ${sub.end} 頁</p>
-            <button onclick="deleteSubject(${sub.id})" style="font-size:10px; color:red;">刪除科目</button>
-        `;
-        grid.appendChild(item);
-    });
-}
-
-// 4. 科目管理功能
-function addSubject() {
-    const name = document.getElementById('new-subject-name').value;
-    const start = parseInt(document.getElementById('new-subject-start').value);
-    const end = parseInt(document.getElementById('new-subject-end').value);
-
-    if (!name || isNaN(start) || isNaN(end) || start >= end) {
-        alert("請填寫正確的資訊 (起始頁須小於目標頁)！");
-        return;
-    }
-
-    const newSub = {
-        id: Date.now(),
-        name: name,
-        start: start,
-        end: end,
-        current: start
-    };
-
-    studyData.subjects.push(newSub);
-    saveData();
-    renderTrophies();
-    hideModal();
-
-    // 清空輸入框
-    document.getElementById('new-subject-name').value = '';
-    document.getElementById('new-subject-start').value = '';
-    document.getElementById('new-subject-end').value = '';
-}
-
-function deleteSubject(id) {
-    if (confirm('確定要刪除這個科目嗎？相關獎盃也會消失喔！')) {
-        studyData.subjects = studyData.subjects.filter(s => s.id !== id);
-        saveData();
-        renderTrophies();
-    }
-}
-
-// 5. 課表編輯功能 (P1 核心)
-function initSchedule() {
-    const tbody = document.getElementById('schedule-body');
-    if (!tbody) return;
-    tbody.innerHTML = '';
-
-    for (let i = 0; i < 8; i++) {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${i + 1}</td>`;
-        for (let j = 0; j < 5; j++) {
-            const td = document.createElement('td');
-            td.className = 'editable-cell';
-            td.innerText = studyData.schedule[i][j] || '';
-            td.onclick = () => {
-                const newVal = prompt('輸入課程或行程：', td.innerText);
-                if (newVal !== null) {
-                    studyData.schedule[i][j] = newVal;
-                    td.innerText = newVal;
-                    saveData();
-                }
-            };
-            tr.appendChild(td);
-        }
-        tbody.appendChild(tr);
-    }
-}
-
-// 6. 清除功能 (包含清除舊紀錄與重設系統)
-/**
- * 清除所有番茄鐘讀書紀錄 (logs)，但保留科目與課表
- */
+//清除讀書紀錄
 function clearStudyLogs() {
     if (confirm('確定要清除所有讀書統計紀錄嗎？這不會影響你的獎盃與課表。')) {
         studyData.logs = [];
@@ -122,12 +31,126 @@ function clearStudyLogs() {
     }
 }
 
-/**
- * 徹底重設整個系統 (警告：所有資料都會消失)
- */
+// 重設整個系統
 function resetEverything() {
-    if (confirm('危險操作！這將刪除所有科目、課表與紀錄。確定嗎？')) {
+    if (confirm('⚠️ 危險操作！這將刪除所有科目、課表與紀錄。確定嗎？')) {
         localStorage.removeItem('studyTrophyData');
         location.reload();
+    }
+}
+
+// 從課表提取科目名稱供選擇
+function getSubjectsFromSchedule() {
+    const subjects = new Set();
+    Object.values(studyData.schedule).forEach(cell => {
+        if (cell.name) subjects.add(cell.name);
+    });
+    return Array.from(subjects);
+}
+
+// 顯示新增科目彈窗 (動態生成下拉選單)
+function showAddSubjectModal() {
+    const availableSubjects = getSubjectsFromSchedule();
+    if (availableSubjects.length === 0) {
+        alert("請先在課表中填寫科目名稱，才能設定目標喔！");
+        return;
+    }
+
+    const select = document.getElementById('new-subject-name');
+    select.innerHTML = availableSubjects.map(sub => `<option value="${sub}">${sub}</option>`).join('');
+    document.getElementById('add-modal').style.display = 'block';
+}
+
+function hideModal() {
+    document.getElementById('add-modal').style.display = 'none';
+}
+
+// 新增科目目標 (支援數字與章節)
+function addSubject() {
+    const name = document.getElementById('new-subject-name').value;
+    const startVal = document.getElementById('new-subject-start').value;
+    const endVal = document.getElementById('new-subject-end').value;
+
+    if (!isNaN(parseFloat(startVal)) && parseFloat(startVal) < 0) {
+        alert("起始範圍不可為負數！");
+        return;
+    }
+
+    studyData.subjects.push({
+        id: Date.now(),
+        name: name,
+        start: startVal,
+        end: endVal,
+        current: startVal
+    });
+
+    saveData();
+    renderTrophies();
+    hideModal();
+}
+
+// 初始化動態課表 (支援行事曆底色)
+function initSchedule() {
+    const tbody = document.getElementById('schedule-body');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    studyData.settings.timeSlots.forEach((slot, index) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td><strong>${slot.label}</strong><br><small>${slot.time}</small></td>`;
+
+        for (let day = 1; day <= 5; day++) {
+            const cellId = `${day}-${index}`;
+            const cellData = studyData.schedule[cellId] || { name: "", events: [] };
+            const td = document.createElement('td');
+            td.className = cellData.events && cellData.events.length > 0 ? 'editable-cell has-event' : 'editable-cell';
+            td.innerHTML = `<div>${cellData.name || ''}</div>${cellData.events && cellData.events.length > 0 ? '📅' : ''}`;
+            td.onclick = () => openCellEditor(cellId);
+            tr.appendChild(td);
+        }
+        tbody.appendChild(tr);
+    });
+}
+
+function openCellEditor(cellId) {
+    const data = studyData.schedule[cellId] || { name: "", events: [] };
+    const newName = prompt("輸入科目名稱:", data.name);
+    if (newName === null) return;
+    const eventNote = prompt("新增行事曆提醒 (留白則不新增):", "");
+
+    studyData.schedule[cellId] = {
+        name: newName,
+        events: eventNote ? [...(data.events || []), { note: eventNote }] : (data.events || [])
+    };
+    saveData();
+    initSchedule();
+}
+
+function renderTrophies() {
+    const grid = document.getElementById('trophy-grid');
+    if (!grid) return;
+    grid.innerHTML = '';
+
+    studyData.subjects.forEach(sub => {
+        const s = parseFloat(sub.start), e = parseFloat(sub.end), c = parseFloat(sub.current);
+        let percent = (!isNaN(s) && !isNaN(e) && !isNaN(c)) ? ((c - s) / (e - s)) * 100 : (c === e ? 100 : 0);
+        percent = Math.min(Math.max(percent, 0), 100);
+
+        let trophyClass = percent >= 100 ? 'gold' : percent >= 66 ? 'silver' : percent >= 33 ? 'bronze' : 'locked';
+        grid.innerHTML += `
+            <div class="trophy-item">
+                <img src="assets/trophy.png" class="trophy-img ${trophyClass}" alt="${sub.name}獎盃">
+                <span class="subject-label">${sub.name.substring(0, 2)}</span>
+                <p><strong>${sub.name}</strong><br>${sub.current} ~ ${sub.end}</p>
+                <button onclick="deleteSubject(${sub.id})" style="font-size:10px; color:red;">刪除</button>
+            </div>`;
+    });
+}
+
+function deleteSubject(id) {
+    if (confirm('刪除此目標？')) {
+        studyData.subjects = studyData.subjects.filter(s => s.id !== id);
+        saveData();
+        renderTrophies();
     }
 }

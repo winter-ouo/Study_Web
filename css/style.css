@@ -1,0 +1,142 @@
+/* css/style.css */
+:root {
+    --primary-red: #e74c3c;
+    --primary-green: #2ecc71;
+    --bg-color: #f4f7f6;
+    --card-bg: #ffffff;
+    --text-color: #2c3e50;
+}
+
+body {
+    font-family: "Microsoft JhengHei", "Heiti TC", sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    margin: 0;
+    padding: 20px;
+}
+
+/* 導覽列 */
+nav {
+    text-align: center;
+    margin-bottom: 30px;
+    padding: 10px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+nav a {
+    margin: 0 15px;
+    text-decoration: none;
+    color: var(--text-color);
+    font-weight: bold;
+    transition: color 0.3s;
+}
+
+nav a:hover {
+    color: var(--primary-red);
+}
+
+/* 獎盃濾鏡控制 */
+.trophy-img {
+    width: 100px;
+    height: 100px;
+    transition: transform 0.3s, filter 0.5s;
+}
+
+.trophy-img.locked {
+    filter: grayscale(1) opacity(0.3);
+}
+
+.trophy-img.bronze {
+    filter: sepia(1) saturate(4) hue-rotate(-30deg);
+}
+
+.trophy-img.silver {
+    filter: grayscale(1) brightness(1.2) contrast(1.1);
+}
+
+.trophy-img.gold {
+    filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.7));
+}
+
+/* 獎盃文字疊加 */
+.trophy-item {
+    position: relative;
+    display: inline-block;
+    padding: 10px;
+    background: white;
+    border-radius: 10px;
+    transition: transform 0.2s;
+}
+
+.trophy-item:hover {
+    transform: translateY(-5px);
+}
+
+.subject-label {
+    position: absolute;
+    top: 45%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-weight: 900;
+    font-size: 1.1rem;
+    color: #444;
+    text-shadow: 1px 1px 0px rgba(255, 255, 255, 0.8);
+    pointer-events: none;
+}
+
+/* 番茄鐘頁面專用 */
+.timer-container {
+    max-width: 500px;
+    margin: 50px auto;
+    background: white;
+    padding: 40px;
+    border-radius: 20px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.timer-display {
+    font-size: 6rem;
+    font-family: 'Courier New', Courier, monospace;
+    color: var(--primary-red);
+    margin: 20px 0;
+}
+
+/* 遮罩與彈窗 */
+.overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(3px);
+    z-index: 999;
+}
+
+#update-modal,
+#add-modal {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+    min-width: 300px;
+}
+
+input[type="number"],
+input[type="text"],
+select {
+    width: 80%;
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}

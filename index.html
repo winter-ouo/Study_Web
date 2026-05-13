@@ -147,7 +147,7 @@
     <div class="container">
         <!-- 左側：課表區 -->
         <section class="schedule-section">
-            <h2>📅 我的課表 (๑•̀ㅂ•́)و</h2>
+            <h2>📅 我的課表</h2>
             <table id="schedule-table">
                 <thead>
                     <tr>
@@ -171,6 +171,10 @@
             <button class="btn-add" onclick="showAddSubjectModal()">＋ 新增科目目標</button>
             <div id="trophy-grid" class="trophy-grid">
                 <!-- 由 JS 根據 localStorage 渲染 -->
+            </div>
+            <div class="admin-controls" style="margin-top: 30px; border-top: 1px inset #eee; padding-top: 20px;">
+                <button onclick="clearStudyLogs()" class="btn-outline">🗑️ 清除讀書紀錄</button>
+                <button onclick="resetEverything()" class="btn-danger">⚠️ 重設系統(會清除所有資料)</button>
             </div>
         </section>
     </div>

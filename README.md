@@ -1,18 +1,4 @@
----
 
-## 🎨 自定義說明 (Customization)
-
-- **更換獎盃**：請將你設計的 $512 \times 512$ px 透明背景 PNG 放入 `assets/` 並命名為 `trophy.png`。
-- **文字疊加**：CSS 已設定 `.subject-label` 類別，可自動將科目名稱的前兩個字壓在獎盃中心。
-
-
-
-## 📄 授權協議 (License)
-
-本專案採用 **MIT License**。歡迎自由修改並打造屬於你的學習神器！
-
-
----
 
 # 🏆 StudyTrophy (動態獎盃學習系統)
 

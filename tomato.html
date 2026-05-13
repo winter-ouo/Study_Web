@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tomato Timer - 專注模式</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        body {
+            font-family: "Microsoft JhengHei", sans-serif;
+            background: #f4f7f6;
+            text-align: center;
+            padding: 50px;
+        }
+
+        nav {
+            margin-bottom: 40px;
+        }
+
+        nav a {
+            margin: 0 15px;
+            text-decoration: none;
+            color: #333;
+            font-weight: bold;
+        }
+
+        .timer-display {
+            font-size: 8rem;
+            font-weight: bold;
+            color: #e74c3c;
+            margin: 20px 0;
+        }
+
+        .controls button {
+            font-size: 1.2rem;
+            padding: 10px 25px;
+            margin: 0 10px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+        }
+
+        .btn-start {
+            background: #2ecc71;
+            color: white;
+        }
+
+        .btn-reset {
+            background: #95a5a6;
+            color: white;
+        }
+
+        .subject-select {
+            margin-bottom: 20px;
+            font-size: 1.1rem;
+            padding: 5px;
+        }
+
+        /* 頁碼更新 Modal */
+        #update-modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+        }
+
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav>
+        <a href="index.html">📅 課表進度</a>
+        <a href="tomato.html">🍅 番茄鐘</a>
+        <a href="stats.html">📊 數據分析</a>
+    </nav>
+
+    <div class="timer-container">
+        <h2>(๑•̀ㅂ•́)و 現在開始專注吧！</h2>
+
+        <!-- 選擇科目 -->
+        <select id="current-subject-select" class="subject-select">
+            <option value="">-- 請選擇讀書科目 --</option>
+        </select>
+
+        <div class="timer-display" id="timer">25:00</div>
+
+        <div class="controls">
+            <button class="btn-start" id="start-btn" onclick="toggleTimer()">開始</button>
+            <button class="btn-reset" onclick="resetTimer()">重置</button>
+        </div>
+    </div>
+
+    <!-- 頁碼更新對話框 -->
+    <div class="overlay" id="overlay"></div>
+    <div id="update-modal">
+        <h3>🍅 番茄鐘結束！</h3>
+        <p id="modal-msg">太棒了，這段時間你讀到第幾頁了？</p>
+        <input type="number" id="modal-page-input" placeholder="輸入目前頁碼"><br><br>
+        <button onclick="submitProgress()">更新進度並儲存紀錄</button>
+    </div>
+
+    <script src="js/main.js"></script>
+    <script src="js/timer.js"></script>
+    <script>
+        // 頁面載入後初始化科目選單
+        window.onload = () => {
+            const select = document.getElementById('current-subject-select');
+            studyData.subjects.forEach(sub => {
+                const opt = document.createElement('option');
+                opt.value = sub.id;
+                opt.innerText = sub.name;
+                select.appendChild(opt);
+            });
+        };
+    </script>
+</body>
+
+</html>

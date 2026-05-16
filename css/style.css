@@ -1,11 +1,9 @@
-/* 基礎設定 */
 :root {
     --bg-color: #f4f7f6;
     --card-bg: #ffffff;
     --primary-red: #e74c3c;
     --primary-green: #2ecc71;
-    --event-highlight: rgba(255, 235, 59, 0.35);
-    /* 需求2: 行事曆半透明底色 */
+    --event-highlight: rgba(255, 235, 59, 0.25);
 }
 
 body {
@@ -15,7 +13,6 @@ body {
     padding: 20px;
 }
 
-/* 導覽列 */
 nav {
     margin-bottom: 20px;
     text-align: center;
@@ -32,14 +29,12 @@ nav a {
     font-weight: bold;
 }
 
-/* 佈局容器 */
 .container {
     display: flex;
     gap: 20px;
     flex-wrap: wrap;
 }
 
-/* 課表樣式升級 (需求2) */
 .schedule-section {
     flex: 2;
     min-width: 500px;
@@ -53,7 +48,6 @@ table {
     width: 100%;
     border-collapse: collapse;
     table-layout: fixed;
-    /* 固定寬度防止跑版 */
 }
 
 th,
@@ -62,7 +56,6 @@ td {
     padding: 12px 5px;
     text-align: center;
     height: 65px;
-    /* 固定高度讓課表整齊 */
     position: relative;
 }
 
@@ -71,11 +64,11 @@ th {
     font-size: 0.9rem;
 }
 
-/* 節次時間欄位特別縮小 */
 td:first-child,
 th:first-child {
-    width: 80px;
+    width: 100px;
     background: #fdfdfd;
+    font-size: 0.85rem;
 }
 
 .editable-cell:hover {
@@ -83,12 +76,18 @@ th:first-child {
     cursor: pointer;
 }
 
-/* 需求2: 行事曆底色與標記 */
 .has-event {
     background-color: var(--event-highlight) !important;
 }
 
-/* 獎盃牆區塊 */
+.event-tag {
+    position: absolute;
+    bottom: 2px;
+    right: 4px;
+    font-size: 0.8rem;
+    cursor: help;
+}
+
 .trophy-section {
     flex: 1;
     min-width: 320px;
@@ -98,6 +97,17 @@ th:first-child {
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
+.btn-add {
+    background: #4caf50;
+    color: white;
+    border: none;
+    padding: 10px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
 .trophy-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
@@ -105,7 +115,6 @@ th:first-child {
     margin-top: 20px;
 }
 
-/* 獎盃圖層與變色 (需求1) */
 .trophy-item {
     position: relative;
     text-align: center;
@@ -130,7 +139,6 @@ th:first-child {
     color: #444;
 }
 
-/* 獎盃濾鏡 (需求1) */
 .locked {
     filter: grayscale(1) opacity(0.3);
 }
@@ -147,7 +155,6 @@ th:first-child {
     filter: drop-shadow(0 0 8px gold);
 }
 
-/* 管理按鍵區樣式 (恢復舊功能) */
 .admin-controls button {
     font-size: 0.8rem;
     padding: 6px 10px;
@@ -187,4 +194,11 @@ th:first-child {
     border-radius: 12px;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
     z-index: 2000;
+    width: 320px;
+}
+
+.modal input {
+    width: 93%;
+    padding: 8px;
+    margin-top: 5px;
 }

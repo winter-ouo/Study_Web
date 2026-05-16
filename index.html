@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>StudyTrophy - 學習管理中心</title>
+    <title>StudyTrophy - 管理中心</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 
@@ -14,12 +14,35 @@
         <a href="stats.html">📊 數據分析</a>
     </nav>
 
+    <div id="current-week-info"
+        style="background:#e8f4fd; color:#2b6cb0; padding:12px; border-radius:8px; margin-bottom:20px; text-align:center; font-size:1.1rem; border:1px solid #bee3f8;">
+        載入時間引擎中...
+    </div>
+
     <div class="container">
         <section class="schedule-section">
-            <h2>📅 課表</h2>
-            <table>
+            <div class="setup-panel"
+                style="background:#f8f9fa; padding:15px; border-radius:8px; margin-bottom:20px; font-size:0.9rem; display:flex; gap:15px; align-items:center; flex-wrap:wrap;">
+                <div>
+                    <label>每學期：</label>
+                    <input type="number" id="setup-weeks" min="1" max="30" style="width:50px; padding:4px;" value="18">
+                    週
+                </div>
+                <div>
+                    <label>開學日期：</label>
+                    <input type="date" id="setup-start-date" style="padding:4px;">
+                </div>
+                <button onclick="saveSemesterSettings()"
+                    style="background:#3182ce; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer;">儲存設定</button>
+                <button onclick="changeTimeSlotsCount()"
+                    style="background:#4a5568; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; margin-left:auto;">⚙️
+                    自訂每日節次數量</button>
+            </div>
+
+            <h2>📅 互動式課表</h2>
+            <table id="schedule-table">
                 <thead>
-                    <tr>
+                    <tr id="schedule-table-head">
                         <th>節次 / 時間</th>
                         <th>一</th>
                         <th>二</th>
@@ -34,10 +57,13 @@
 
         <section class="trophy-section">
             <h2>🏆 獎盃牆</h2>
-            <button class="btn-add" onclick="showAddSubjectModal()">＋ 新增科目目標</button>
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <button class="btn-add" onclick="showAddSubjectModal()">＋ 新增科目目標</button>
+                <button class="btn-add" onclick="showAddEventModal()" style="background: #2b8a3e;">📅 新增行事曆提醒</button>
+            </div>
+
             <div id="trophy-grid" class="trophy-grid"></div>
 
-            <!-- [功能恢復] 清除按鍵區 -->
             <div class="admin-controls" style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px;">
                 <button onclick="clearStudyLogs()" class="btn-outline">🗑️ 清除讀書紀錄</button>
                 <button onclick="resetEverything()" class="btn-danger">⚠️ 重設整個系統</button>
@@ -45,20 +71,44 @@
         </section>
     </div>
 
-    <!-- 新增科目彈窗 -->
     <div id="add-modal" class="modal" style="display:none;">
         <h3>新增科目目標</h3>
         <label>選擇科目 (來自課表):</label><br>
         <select id="new-subject-name" style="width:100%; padding:8px;"></select><br><br>
         <input type="text" id="new-subject-start" placeholder="起始 (如: 1 或 第一章)"><br><br>
         <input type="text" id="new-subject-end" placeholder="目標 (如: 70 或 第五章)"><br><br>
-        <button onclick="addSubject()">儲存</button>
-        <button onclick="hideModal()">取消</button>
+        <button onclick="addSubject()">儲存目標</button>
+        <button onclick="hideModals()">取消</button>
+    </div>
+
+    <div id="event-modal" class="modal" style="display:none;">
+        <h3>📅 新增行事曆提醒</h3>
+        <label>選擇星期：</label><br>
+        <select id="event-day" style="width:100%; padding:8px;">
+            <option value="1">週一</option>
+            <option value="2">週二</option>
+            <option value="3">週三</option>
+            <option value="4">週四</option>
+            <option value="5">週五</option>
+        </select><br><br>
+
+        <label>選擇節次：</label><br>
+        <select id="event-slot" style="width:100%; padding:8px;"></select><br><br>
+
+        <label>提醒事件內容：</label><br>
+        <input type="text" id="event-note" placeholder="例如：14:00 考微積分" style="width:93%;"><br><br>
+
+        <button onclick="addCalendarEvent()" style="background: #2b8a3e; color: white;">儲存提醒</button>
+        <button onclick="hideModals()">取消</button>
     </div>
 
     <script src="js/main.js"></script>
     <script>
         window.onload = () => {
+            // 初始化自訂設定欄位預設值
+            document.getElementById('setup-weeks').value = studyData.settings.totalWeeks;
+            document.getElementById('setup-start-date').value = studyData.settings.startDate;
+
             initSchedule();
             renderTrophies();
         };

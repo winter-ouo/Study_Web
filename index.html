@@ -21,26 +21,27 @@
 
     <div class="container">
         <section class="schedule-section">
+
             <div class="setup-panel"
-                style="background:#f8f9fa; padding:15px; border-radius:8px; margin-bottom:20px; font-size:0.9rem; display:flex; gap:15px; align-items:center; flex-wrap:wrap;">
-                <div>
-                    <label>每學期：</label>
-                    <input type="number" id="setup-weeks" min="1" max="30" style="width:50px; padding:4px;" value="18">
-                    週
+                style="background:#f8f9fa; padding:15px; border-radius:8px; margin-bottom:20px; font-size:0.85rem; line-height: 1.8;">
+                <strong style="font-size:0.95rem; color:#2d3748;">⚙️ 課表自訂時間計算引擎</strong>
+                <div style="display:flex; gap:15px; flex-wrap:wrap; margin-top:10px;">
+                    <div>學期週數 <input type="number" id="setup-weeks" style="width:45px;" value="18"> 週</div>
+                    <div>開學日期 <input type="date" id="setup-start-date"></div>
+                    <div>每日節次 <input type="number" id="engine-slots" style="width:40px;" value="8"> 節</div>
+                    <div>始於 <input type="time" id="engine-start" value="08:10"></div>
+                    <div>上課 <input type="number" id="engine-class-len" style="width:45px;" value="50"> 分</div>
+                    <div>下課 <input type="number" id="engine-rest-len" style="width:45px;" value="10"> 分</div>
+                    <div>午休在第 <input type="number" id="engine-noon-slot" style="width:40px;" value="4"> 節後</div>
+                    <div>午休時間 <input type="number" id="engine-noon-len" style="width:45px;" value="70"> 分</div>
                 </div>
-                <div>
-                    <label>開學日期：</label>
-                    <input type="date" id="setup-start-date" style="padding:4px;">
-                </div>
-                <button onclick="saveSemesterSettings()"
-                    style="background:#3182ce; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer;">儲存設定</button>
-                <button onclick="changeTimeSlotsCount()"
-                    style="background:#4a5568; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; margin-left:auto;">⚙️
-                    自訂每日節次數量</button>
+                <button onclick="saveSemesterSettings(); updateTimeEngine();"
+                    style="background:#3182ce; color:white; border:none; padding:6px 15px; border-radius:4px; cursor:pointer; margin-top:10px; font-weight:bold;">⚙️
+                    更新自訂時間與學期</button>
             </div>
 
             <h2>📅 互動式課表</h2>
-            <table id="schedule-table">
+            <table>
                 <thead>
                     <tr id="schedule-table-head">
                         <th>節次 / 時間</th>
@@ -91,13 +92,10 @@
             <option value="4">週四</option>
             <option value="5">週五</option>
         </select><br><br>
-
         <label>選擇節次：</label><br>
         <select id="event-slot" style="width:100%; padding:8px;"></select><br><br>
-
         <label>提醒事件內容：</label><br>
         <input type="text" id="event-note" placeholder="例如：14:00 考微積分" style="width:93%;"><br><br>
-
         <button onclick="addCalendarEvent()" style="background: #2b8a3e; color: white;">儲存提醒</button>
         <button onclick="hideModals()">取消</button>
     </div>
@@ -105,9 +103,15 @@
     <script src="js/main.js"></script>
     <script>
         window.onload = () => {
-            // 初始化自訂設定欄位預設值
+            // 同步基礎設定值到畫面上
             document.getElementById('setup-weeks').value = studyData.settings.totalWeeks;
             document.getElementById('setup-start-date').value = studyData.settings.startDate;
+            document.getElementById('engine-slots').value = studyData.settings.totalSlots;
+            document.getElementById('engine-start').value = studyData.settings.startTime;
+            document.getElementById('engine-class-len').value = studyData.settings.classDuration;
+            document.getElementById('engine-rest-len').value = studyData.settings.restDuration;
+            document.getElementById('engine-noon-slot').value = studyData.settings.noonSlot;
+            document.getElementById('engine-noon-len').value = studyData.settings.noonDuration;
 
             initSchedule();
             renderTrophies();

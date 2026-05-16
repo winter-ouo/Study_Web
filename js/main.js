@@ -1,106 +1,149 @@
-// 核心資料結構：自訂節次與真實日期連動
+// 核心資料結構
 let studyData = JSON.parse(localStorage.getItem('studyTrophyData')) || {
     settings: {
         totalWeeks: 18,
-        startDate: new Date().toISOString().split('T')[0], // 預設學期今天開始
-        timeSlots: [
-            { label: "1", time: "08:10~09:00" }, { label: "2", time: "09:10~10:00" },
-            { label: "3", time: "10:10~11:00" }, { label: "4", time: "11:10~12:00" },
-            { label: "午", time: "12:00~13:10" }, { label: "5", time: "13:10~14:00" },
-            { label: "6", time: "14:10~15:00" }, { label: "7", time: "15:10~16:00" },
-            { label: "8", time: "16:10~17:00" }, { label: "9", time: "17:10~18:00" },
-            { label: "10", time: "18:05~18:55" }, { label: "11", time: "19:00~19:50" },
-            { label: "12", time: "19:55~20:45" }, { label: "13", time: "20:50~21:40" }
-        ]
+        startDate: "2026-02-16", // 預設一個開學日基準
+        // 時間引擎設定
+        totalSlots: 8,           // 一天幾節課
+        startTime: "08:10",      // 第一節開始時間
+        classDuration: 50,       // 上課幾分鐘
+        restDuration: 10,        // 下課休息幾分鐘
+        noonSlot: 4,             // 午休在第幾節之後
+        noonDuration: 70,        // 午休時間幾分鐘
+        timeSlots: []            // 自動生成的節次放這裡
     },
     subjects: [],
-    schedule: {},
+    schedule: {}, // 格式: { "day-slot": { name: "", events: [] } }
     logs: []
 };
+
+// 全局變數：記錄使用者目前切換到畫面的日期偏移量（0 代表本週，-1 代表前一週，1 代表下一週）
+let currentWeekOffset = 0;
+
+// 自動時間計算引擎
+function calculateTimeSlots() {
+    const slots = [];
+    const [startHour, startMin] = studyData.settings.startTime.split(':').map(Number);
+    let currentMinutes = startHour * 60 + startMin;
+
+    const total = studyData.settings.totalSlots;
+    const classLen = studyData.settings.classDuration;
+    const restLen = studyData.settings.restDuration;
+    const noonAfter = studyData.settings.noonSlot;
+    const noonLen = studyData.settings.noonDuration;
+
+    for (let i = 1; i <= total; i++) {
+        // 計算這一節的開始與結束時間
+        let startH = Math.floor(currentMinutes / 60).toString().padStart(2, '0');
+        let startM = (currentMinutes % 60).toString().padStart(2, '0');
+
+        currentMinutes += classLen;
+
+        let endH = Math.floor(currentMinutes / 60).toString().padStart(2, '0');
+        let endM = (currentMinutes % 60).toString().padStart(2, '0');
+
+        slots.push({
+            label: `${i}`,
+            time: `${startH}:${startM}~${endH}:${endM}`
+        });
+
+        // 判斷接下來是午休還是普通下課
+        if (i === noonAfter) {
+            currentMinutes += noonLen; // 加上午休時間
+        } else {
+            currentMinutes += restLen; // 加上一般下課
+        }
+    }
+    studyData.settings.timeSlots = slots;
+}
+
+// 如果是一開始初始化，或是舊資料沒有時間引擎欄位，自動補齊並計算
+if (!studyData.settings.classDuration) {
+    studyData.settings.totalSlots = 8;
+    studyData.settings.startTime = "08:10";
+    studyData.settings.classDuration = 50;
+    studyData.settings.restDuration = 10;
+    studyData.settings.noonSlot = 4;
+    studyData.settings.noonDuration = 70;
+}
+calculateTimeSlots(); // 確保每次載入都動態算好
 
 function saveData() {
     localStorage.setItem('studyTrophyData', JSON.stringify(studyData));
 }
 
-// 系統管理功能
-function clearStudyLogs() {
-    if (confirm('確定要清除所有讀書統計紀錄嗎？這不會影響你的獎盃與課表。')) {
-        studyData.logs = [];
-        saveData();
-        alert('已清除統計紀錄！');
-        if (window.location.pathname.includes('stats.html')) location.reload();
-    }
-}
+// 變更時間引擎設定
+function updateTimeEngine() {
+    studyData.settings.totalSlots = parseInt(document.getElementById('engine-slots').value);
+    studyData.settings.startTime = document.getElementById('engine-start').value;
+    studyData.settings.classDuration = parseInt(document.getElementById('engine-class-len').value);
+    studyData.settings.restDuration = parseInt(document.getElementById('engine-rest-len').value);
+    studyData.settings.noonSlot = parseInt(document.getElementById('engine-noon-slot').value);
+    studyData.settings.noonDuration = parseInt(document.getElementById('engine-noon-len').value);
 
-function resetEverything() {
-    if (confirm('⚠️ 危險操作！這將刪除所有科目、課表與紀錄。確定嗎？')) {
-        localStorage.removeItem('studyTrophyData');
-        location.reload();
-    }
-}
-
-// 儲存課表與學期自訂設定
-function saveSemesterSettings() {
-    const weeks = parseInt(document.getElementById('setup-weeks').value);
-    const sDate = document.getElementById('setup-start-date').value;
-
-    if (isNaN(weeks) || weeks <= 0 || !sDate) {
-        alert("請輸入正確的學期設定！");
-        return;
-    }
-
-    studyData.settings.totalWeeks = weeks;
-    studyData.settings.startDate = sDate;
+    calculateTimeSlots();
     saveData();
-
     initSchedule();
-    alert("學期設定已更新！(๑•̀ㅂ•́)و");
+    alert("時間引擎已重新計算並更新課表！(๑•̀ㅂ•́)ו");
 }
 
-// 輔助函式：找出任何指定日期「那一週的星期一」
+// 週一錨點計算輔助
 function getMondayOfDate(targetDate) {
     const d = new Date(targetDate);
     const day = d.getDay();
-    // JavaScript 的 getDay(): 0 是週日, 1 是週一, ..., 6 是週六
     const diff = d.getDate() - day + (day === 0 ? -6 : 1);
     return new Date(d.setDate(diff));
 }
 
-// 自動計算目前是第幾週（修正版：以週一為基準計算）
+// 週數與日期切換控制
+function changeWeek(direction) {
+    currentWeekOffset += direction;
+    initSchedule();
+}
+
+function resetToThisWeek() {
+    currentWeekOffset = 0;
+    initSchedule();
+}
+
+// 自動計算畫面顯示的週數
 function updateCurrentWeekDisplay() {
     const start = new Date(studyData.settings.startDate);
     const now = new Date();
+    // 加上偏移量計算畫面上那一週的日期
+    now.setDate(now.getDate() + (currentWeekOffset * 7));
+
     start.setHours(0, 0, 0, 0);
     now.setHours(0, 0, 0, 0);
 
-    // 找出開學日那一週的週一，以及今天這一週的週一
     const startMonday = getMondayOfDate(start);
     const nowMonday = getMondayOfDate(now);
 
     const diffTime = nowMonday.getTime() - startMonday.getTime();
     const diffWeeks = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 7));
 
-    let currentWeek = diffWeeks + 1;
+    let displayWeek = diffWeeks + 1;
 
     const infoText = document.getElementById('current-week-info');
     if (infoText) {
-        if (currentWeek > studyData.settings.totalWeeks) {
-            infoText.innerHTML = `📅 目前日期：${now.toLocaleDateString()} (學期已結束)`;
-        } else if (currentWeek < 1) {
-            infoText.innerHTML = `📅 目前日期：${now.toLocaleDateString()} (學期尚未開始，第 ${currentWeek} 週)`;
-        } else {
-            infoText.innerHTML = `📅 目前日期：${now.toLocaleDateString()} <strong>【第 ${currentWeek} 週】</strong>`;
-        }
+        let weekStr = (displayWeek >= 1 && displayWeek <= studyData.settings.totalWeeks)
+            ? `【第 ${displayWeek} 週】` : `【學期外】`;
+
+        infoText.innerHTML = `
+            <button onclick="changeWeek(-1)" style="padding:5px 10px; cursor:pointer;">◀ 上一週</button>
+            <span style="margin: 0 15px; font-weight:bold;">📅 畫面日期基準：${now.toLocaleDateString()} ${weekStr}</span>
+            <button onclick="changeWeek(1)" style="padding:5px 10px; cursor:pointer;">下一週 ▶</button>
+            <button onclick="resetToThisWeek()" style="margin-left:10px; font-size:0.8rem; padding:2px 5px; cursor:pointer;">返回本週</button>
+        `;
     }
-    return currentWeek;
 }
 
-// 根據目前實際日期，精準推算「這週一到週五」的實際西元日期（修正版）
-function getDatesOfCurrentWeek() {
+// 推算畫面中那一週的「週一到週五」實際日期
+function getDatesOfDisplayedWeek() {
     const now = new Date();
+    now.setDate(now.getDate() + (currentWeekOffset * 7));
     now.setHours(0, 0, 0, 0);
 
-    // 取得今天這一週的星期一
     const monday = getMondayOfDate(now);
 
     const weekDates = [];
@@ -113,91 +156,11 @@ function getDatesOfCurrentWeek() {
     return weekDates;
 }
 
-// 從課表提取科目名稱
-function getSubjectsFromSchedule() {
-    const subjects = new Set();
-    Object.values(studyData.schedule).forEach(cell => {
-        if (cell && cell.name) subjects.add(cell.name);
-    });
-    return Array.from(subjects);
-}
-
-// 彈窗與管理控制
-function showAddSubjectModal() {
-    const availableSubjects = getSubjectsFromSchedule();
-    if (availableSubjects.length === 0) {
-        alert("請先在課表中填寫科目名稱，才能設定目標喔！");
-        return;
-    }
-    const select = document.getElementById('new-subject-name');
-    select.innerHTML = availableSubjects.map(sub => `<option value="${sub}">${sub}</option>`).join('');
-    document.getElementById('add-modal').style.display = 'block';
-}
-
-function showAddEventModal() {
-    const daySelect = document.getElementById('event-day');
-    const slotSelect = document.getElementById('event-slot');
-    slotSelect.innerHTML = studyData.settings.timeSlots.map((slot, index) =>
-        `<option value="${index}">第 ${slot.label} 節 (${slot.time})</option>`
-    ).join('');
-    document.getElementById('event-modal').style.display = 'block';
-}
-
-function hideModals() {
-    document.getElementById('add-modal').style.display = 'none';
-    document.getElementById('event-modal').style.display = 'none';
-}
-
-function addSubject() {
-    const name = document.getElementById('new-subject-name').value;
-    const startVal = document.getElementById('new-subject-start').value;
-    const endVal = document.getElementById('new-subject-end').value;
-
-    if (!isNaN(parseFloat(startVal)) && parseFloat(startVal) < 0) {
-        alert("起始範圍不可為負數！");
-        return;
-    }
-
-    studyData.subjects.push({
-        id: Date.now(),
-        name: name,
-        start: startVal,
-        end: endVal,
-        current: startVal
-    });
-
-    saveData();
-    renderTrophies();
-    hideModals();
-}
-
-function addCalendarEvent() {
-    const day = document.getElementById('event-day').value;
-    const slot = document.getElementById('event-slot').value;
-    const note = document.getElementById('event-note').value;
-
-    if (!note.trim()) {
-        alert("請輸入提醒內容！");
-        return;
-    }
-
-    const cellId = `${day}-${slot}`;
-    if (!studyData.schedule[cellId]) studyData.schedule[cellId] = { name: "", events: [] };
-    if (!studyData.schedule[cellId].events) studyData.schedule[cellId].events = [];
-
-    studyData.schedule[cellId].events.push({ note: note.trim() });
-
-    saveData();
-    initSchedule();
-    hideModals();
-    document.getElementById('event-note').value = '';
-}
-
-// 初始化動態課表
+// 初始化課表結構
 function initSchedule() {
     updateCurrentWeekDisplay();
 
-    const dates = getDatesOfCurrentWeek();
+    const dates = getDatesOfDisplayedWeek();
     const ths = document.querySelectorAll('#schedule-table-head th');
     if (ths.length === 6) {
         ths[1].innerText = `一 (${dates[0]})`;
@@ -213,7 +176,7 @@ function initSchedule() {
 
     studyData.settings.timeSlots.forEach((slot, index) => {
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td><strong>${slot.label}</strong><br><small>${slot.time}</small></td>`;
+        tr.innerHTML = `<td><strong>第 ${slot.label} 節</strong><br><small>${slot.time}</small></td>`;
 
         for (let day = 1; day <= 5; day++) {
             const cellId = `${day}-${index}`;
@@ -239,7 +202,7 @@ function initSchedule() {
 
 function editSubjectOnly(cellId) {
     const data = studyData.schedule[cellId] || { name: "", events: [] };
-    const newName = prompt("輸入或修改科目名稱 (輸入留白可清除此格):", data.name);
+    const newName = prompt("輸入或修改科目名稱 (輸入留白可清除):", data.name);
     if (newName !== null) {
         studyData.schedule[cellId] = {
             name: newName.trim(),
@@ -250,49 +213,82 @@ function editSubjectOnly(cellId) {
     }
 }
 
-// 自訂每日節次數量
-function changeTimeSlotsCount() {
-    const newCount = prompt("你一天想要幾節課？(原本預設為 13 節)", studyData.settings.timeSlots.length);
-    if (!newCount || isNaN(newCount)) return;
+// 提取科目與獎盃牆邏輯
+function getSubjectsFromSchedule() {
+    const subjects = new Set();
+    Object.values(studyData.schedule).forEach(cell => {
+        if (cell && cell.name) subjects.add(cell.name);
+    });
+    return Array.from(subjects);
+}
 
-    const count = parseInt(newCount);
-    if (count < 1 || count > 20) {
-        alert("節次數量請設定在 1 ~ 20 之間。");
+function showAddSubjectModal() {
+    const availableSubjects = getSubjectsFromSchedule();
+    if (availableSubjects.length === 0) {
+        alert("請先在課表中填寫科目名稱，才能設定目標喔！");
         return;
     }
+    const select = document.getElementById('new-subject-name');
+    select.innerHTML = availableSubjects.map(sub => `<option value="${sub}">${sub}</option>`).join('');
+    document.getElementById('add-modal').style.display = 'block';
+}
 
-    if (count > studyData.settings.timeSlots.length) {
-        while (studyData.settings.timeSlots.length < count) {
-            const num = studyData.settings.timeSlots.length + 1;
-            studyData.settings.timeSlots.push({ label: `${num}`, time: "00:00~00:00" });
-        }
-    } else {
-        if (confirm(`縮減節次可能會丟失第 ${count + 1} 節之後的課表數據，確定嗎？`)) {
-            studyData.settings.timeSlots = studyData.settings.timeSlots.slice(0, count);
-        } else {
-            return;
-        }
-    }
+function showAddEventModal() {
+    const slotSelect = document.getElementById('event-slot');
+    slotSelect.innerHTML = studyData.settings.timeSlots.map((slot, index) =>
+        `<option value="${index}">第 ${slot.label} 節 (${slot.time})</option>`
+    ).join('');
+    document.getElementById('event-modal').style.display = 'block';
+}
 
+function hideModals() {
+    document.getElementById('add-modal').style.display = 'none';
+    document.getElementById('event-modal').style.display = 'none';
+}
+
+function addSubject() {
+    const name = document.getElementById('new-subject-name').value;
+    const startVal = document.getElementById('new-subject-start').value;
+    const endVal = document.getElementById('new-subject-end').value;
+
+    studyData.subjects.push({
+        id: Date.now(), name: name, start: startVal, end: endVal, current: startVal
+    });
+    saveData();
+    renderTrophies();
+    hideModals();
+}
+
+function addCalendarEvent() {
+    const day = document.getElementById('event-day').value;
+    const slot = document.getElementById('event-slot').value;
+    const note = document.getElementById('event-note').value;
+
+    if (!note.trim()) return alert("請輸入提醒內容！");
+
+    const cellId = `${day}-${slot}`;
+    if (!studyData.schedule[cellId]) studyData.schedule[cellId] = { name: "", events: [] };
+    if (!studyData.schedule[cellId].events) studyData.schedule[cellId].events = [];
+
+    studyData.schedule[cellId].events.push({ note: note.trim() });
     saveData();
     initSchedule();
-    alert("已成功調整課表節次總數！");
+    hideModals();
+    document.getElementById('event-note').value = '';
 }
 
 function renderTrophies() {
     const grid = document.getElementById('trophy-grid');
     if (!grid) return;
     grid.innerHTML = '';
-
     studyData.subjects.forEach(sub => {
         const s = parseFloat(sub.start), e = parseFloat(sub.end), c = parseFloat(sub.current);
         let percent = (!isNaN(s) && !isNaN(e) && !isNaN(c)) ? ((c - s) / (e - s)) * 100 : (c === e ? 100 : 0);
         percent = Math.min(Math.max(percent, 0), 100);
-
         let trophyClass = percent >= 100 ? 'gold' : percent >= 66 ? 'silver' : percent >= 33 ? 'bronze' : 'locked';
         grid.innerHTML += `
             <div class="trophy-item">
-                <img src="assets/trophy.png" class="trophy-img ${trophyClass}" alt="${sub.name}獎盃">
+                <img src="assets/trophy.png" class="trophy-img ${trophyClass}">
                 <span class="subject-label">${sub.name.substring(0, 2)}</span>
                 <p><strong>${sub.name}</strong><br>${sub.current} ~ ${sub.end}</p>
                 <button onclick="deleteSubject(${sub.id})" style="font-size:10px; color:red;">刪除</button>
@@ -306,4 +302,11 @@ function deleteSubject(id) {
         saveData();
         renderTrophies();
     }
+}
+
+function clearStudyLogs() {
+    if (confirm('確定要清除所有讀書紀錄嗎？')) { studyData.logs = []; saveData(); location.reload(); }
+}
+function resetEverything() {
+    if (confirm('⚠️ 確定重設整個系統？')) { localStorage.removeItem('studyTrophyData'); location.reload(); }
 }

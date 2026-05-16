@@ -66,9 +66,9 @@ th {
 
 td:first-child,
 th:first-child {
-    width: 100px;
+    width: 110px;
     background: #fdfdfd;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
 }
 
 .editable-cell:hover {

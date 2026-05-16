@@ -1,4 +1,4 @@
-// 核心資料結構：加入學期與日期自訂功能
+// 核心資料結構：自訂節次與真實日期連動
 let studyData = JSON.parse(localStorage.getItem('studyTrophyData')) || {
     settings: {
         totalWeeks: 18,
@@ -53,31 +53,41 @@ function saveSemesterSettings() {
     studyData.settings.startDate = sDate;
     saveData();
 
-    // 重新渲染課表以套用新日期
     initSchedule();
     alert("學期設定已更新！(๑•̀ㅂ•́)و");
 }
 
-// 自動計算目前是第幾週
+// 輔助函式：找出任何指定日期「那一週的星期一」
+function getMondayOfDate(targetDate) {
+    const d = new Date(targetDate);
+    const day = d.getDay();
+    // JavaScript 的 getDay(): 0 是週日, 1 是週一, ..., 6 是週六
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+    return new Date(d.setDate(diff));
+}
+
+// 自動計算目前是第幾週（修正版：以週一為基準計算）
 function updateCurrentWeekDisplay() {
     const start = new Date(studyData.settings.startDate);
     const now = new Date();
-
-    // 將時間重設為午夜避免時差計算錯誤
     start.setHours(0, 0, 0, 0);
     now.setHours(0, 0, 0, 0);
 
-    const diffTime = now.getTime() - start.getTime();
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    // 找出開學日那一週的週一，以及今天這一週的週一
+    const startMonday = getMondayOfDate(start);
+    const nowMonday = getMondayOfDate(now);
 
-    let currentWeek = Math.floor(diffDays / 7) + 1;
+    const diffTime = nowMonday.getTime() - startMonday.getTime();
+    const diffWeeks = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 7));
+
+    let currentWeek = diffWeeks + 1;
 
     const infoText = document.getElementById('current-week-info');
     if (infoText) {
         if (currentWeek > studyData.settings.totalWeeks) {
             infoText.innerHTML = `📅 目前日期：${now.toLocaleDateString()} (學期已結束)`;
         } else if (currentWeek < 1) {
-            infoText.innerHTML = `📅 目前日期：${now.toLocaleDateString()} (學期尚未開始)`;
+            infoText.innerHTML = `📅 目前日期：${now.toLocaleDateString()} (學期尚未開始，第 ${currentWeek} 週)`;
         } else {
             infoText.innerHTML = `📅 目前日期：${now.toLocaleDateString()} <strong>【第 ${currentWeek} 週】</strong>`;
         }
@@ -85,23 +95,17 @@ function updateCurrentWeekDisplay() {
     return currentWeek;
 }
 
-// 根據學期起日，推算「本週」週一到週五的實際日期
+// 根據目前實際日期，精準推算「這週一到週五」的實際西元日期（修正版）
 function getDatesOfCurrentWeek() {
-    const start = new Date(studyData.settings.startDate);
     const now = new Date();
-    start.setHours(0, 0, 0, 0);
     now.setHours(0, 0, 0, 0);
 
-    // 計算今天跟學期起始日差幾天
-    const diffDays = Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-    // 推算目前這週的「週一」相對於學期開始日是第幾天
-    const currentWeekIdx = Math.floor(diffDays / 7);
-    const mondayOfThisWeek = new Date(start.getTime() + (currentWeekIdx * 7 * 24 * 60 * 60 * 1000));
+    // 取得今天這一週的星期一
+    const monday = getMondayOfDate(now);
 
     const weekDates = [];
     for (let i = 0; i < 5; i++) {
-        const d = new Date(mondayOfThisWeek.getTime() + (i * 24 * 60 * 60 * 1000));
-        // 格式化成 MM/DD
+        const d = new Date(monday.getTime() + (i * 24 * 60 * 60 * 1000));
         const month = (d.getMonth() + 1).toString().padStart(2, '0');
         const date = d.getDate().toString().padStart(2, '0');
         weekDates.push(`${month}/${date}`);
@@ -189,12 +193,10 @@ function addCalendarEvent() {
     document.getElementById('event-note').value = '';
 }
 
-// 初始化動態課表 (連動實際動態日期)
+// 初始化動態課表
 function initSchedule() {
-    // 更新上方日期與週數提示
     updateCurrentWeekDisplay();
 
-    // 取得本週實際日期數組 [一, 二, 三, 四, 五]
     const dates = getDatesOfCurrentWeek();
     const ths = document.querySelectorAll('#schedule-table-head th');
     if (ths.length === 6) {
@@ -248,7 +250,7 @@ function editSubjectOnly(cellId) {
     }
 }
 
-// 增改課表節次定義功能
+// 自訂每日節次數量
 function changeTimeSlotsCount() {
     const newCount = prompt("你一天想要幾節課？(原本預設為 13 節)", studyData.settings.timeSlots.length);
     if (!newCount || isNaN(newCount)) return;
@@ -259,7 +261,6 @@ function changeTimeSlotsCount() {
         return;
     }
 
-    // 如果想要增加或減少
     if (count > studyData.settings.timeSlots.length) {
         while (studyData.settings.timeSlots.length < count) {
             const num = studyData.settings.timeSlots.length + 1;
@@ -273,10 +274,9 @@ function changeTimeSlotsCount() {
         }
     }
 
-    // 讓使用者逐一微調新時間（可選，或直接在畫面上修改，此處直接更新重繪）
     saveData();
     initSchedule();
-    alert("已成功調整課表節次總數！你可以接著點擊左側節次欄位進行個別時間修改。");
+    alert("已成功調整課表節次總數！");
 }
 
 function renderTrophies() {

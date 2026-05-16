@@ -35,7 +35,7 @@
                 <div style="display:flex; gap:15px; flex-wrap:wrap; margin-top:10px;">
 
                     <div>學期週數：
-                        <input type="number" id="setup-weeks" style="width:50px; padding:4px;" min="1" max="50"> 週
+                        <input type="number" id="setup-weeks" style="width:60px; padding:4px;" min="1" max="50"> 週
                     </div>
 
                     <div>開學日期：
@@ -43,7 +43,7 @@
                     </div>
 
                     <div>每日節次：
-                        <input type="number" id="engine-slots" style="width:50px; padding:4px;" min="1" max="24"> 節
+                        <input type="number" id="engine-slots" style="width:60px; padding:4px;" min="1" max="24"> 節
                     </div>
 
                     <div>第一節始於：
@@ -51,19 +51,19 @@
                     </div>
 
                     <div>上課長度：
-                        <input type="number" id="engine-class-len" style="width:50px; padding:4px;" min="1"> 分鐘
+                        <input type="number" id="engine-class-len" style="width:60px; padding:4px;" min="1"> 分鐘
                     </div>
 
                     <div>下課休息：
-                        <input type="number" id="engine-rest-len" style="width:50px; padding:4px;" min="0"> 分鐘
+                        <input type="number" id="engine-rest-len" style="width:60px; padding:4px;" min="0"> 分鐘
                     </div>
 
                     <div>午休安排在：第
-                        <input type="number" id="engine-noon-slot" style="width:50px; padding:4px;" min="1"> 節後
+                        <input type="number" id="engine-noon-slot" style="width:60px; padding:4px;" min="1"> 節後
                     </div>
 
                     <div>午休時間：
-                        <input type="number" id="engine-noon-len" style="width:50px; padding:4px;" min="0"> 分鐘
+                        <input type="number" id="engine-noon-len" style="width:60px; padding:4px;" min="0"> 分鐘
                     </div>
 
                 </div>
@@ -147,6 +147,7 @@
         }
 
         window.onload = () => {
+            // 真正完全綁定到輸入框數值
             document.getElementById('setup-weeks').value = studyData.settings.totalWeeks;
             document.getElementById('setup-start-date').value = studyData.settings.startDate;
             document.getElementById('engine-slots').value = studyData.settings.totalSlots;

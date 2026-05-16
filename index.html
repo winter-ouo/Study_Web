@@ -67,11 +67,16 @@
                     </div>
 
                 </div>
-                <div style="margin-top: 10px; text-align: right;">
-                    <button onclick="saveSemesterSettings(); updateTimeEngine();"
-                        style="background:#3182ce; color:white; border:none; padding:6px 15px; border-radius:4px; cursor:pointer; font-weight:bold;">套用並儲存</button>
-                    <button onclick="toggleSetupPanel()"
-                        style="background:#a0aec0; color:white; border:none; padding:6px 15px; border-radius:4px; cursor:pointer; font-weight:bold; margin-left:5px;">取消關閉</button>
+                <div style="margin-top: 10px; display: flex; justify-content: space-between;">
+                    <button onclick="restoreDefaultEngineSettings()"
+                        style="background:#e53e3e; color:white; border:none; padding:6px 15px; border-radius:4px; cursor:pointer; font-weight:bold;">↩️
+                        回復預設</button>
+                    <div>
+                        <button onclick="saveSemesterSettings(); updateTimeEngine();"
+                            style="background:#3182ce; color:white; border:none; padding:6px 15px; border-radius:4px; cursor:pointer; font-weight:bold;">套用並儲存</button>
+                        <button onclick="toggleSetupPanel()"
+                            style="background:#a0aec0; color:white; border:none; padding:6px 15px; border-radius:4px; cursor:pointer; font-weight:bold; margin-left:5px;">取消關閉</button>
+                    </div>
                 </div>
             </div>
 
@@ -146,8 +151,8 @@
             }
         }
 
-        window.onload = () => {
-            // 真正完全綁定到輸入框數值
+        // 把資料庫的數值載入到輸入框中
+        function loadSettingsToInputs() {
             document.getElementById('setup-weeks').value = studyData.settings.totalWeeks;
             document.getElementById('setup-start-date').value = studyData.settings.startDate;
             document.getElementById('engine-slots').value = studyData.settings.totalSlots;
@@ -156,7 +161,10 @@
             document.getElementById('engine-rest-len').value = studyData.settings.restDuration;
             document.getElementById('engine-noon-slot').value = studyData.settings.noonSlot;
             document.getElementById('engine-noon-len').value = studyData.settings.noonDuration;
+        }
 
+        window.onload = () => {
+            loadSettingsToInputs();
             initSchedule();
             renderTrophies();
         };

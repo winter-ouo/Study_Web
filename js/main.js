@@ -2,27 +2,31 @@
 let studyData = JSON.parse(localStorage.getItem('studyTrophyData')) || {
     settings: {
         totalWeeks: 18,
-        startDate: "2026-02-16",
-        totalSlots: 8,
-        startTime: "08:10",
-        classDuration: 50,
-        restDuration: 10,
-        noonSlot: 4,
-        noonDuration: 70,
-        timeSlots: []
+        startDate: "2026-02-16", // 預設一個開學日基準
+        // 時間引擎設定
+        totalSlots: 8,           // 一天幾節課
+        startTime: "08:10",      // 第一節開始時間
+        classDuration: 50,       // 上課幾分鐘
+        restDuration: 10,        // 下課休息幾分鐘
+        noonSlot: 4,             // 午休在第幾節之後
+        noonDuration: 70,        // 午休時間幾分鐘
+        timeSlots: []            // 自動生成的節次放這裡
     },
     subjects: [],
-    schedule: {},
+    schedule: {}, // 格式: { "day-slot": { name: "", events: [] } }
     logs: []
 };
 
-// 自動時間計算引擎
+// 全局變數：記錄使用者目前切換到畫面的日期偏移量（0 代表本週，-1 代表前一週，1 代表下一週）
+let currentWeekOffset = 0;
+
+// 自動時間計算引擎 (完美融合 parseInt 確保手 key 資料不當掉)
 function calculateTimeSlots() {
     const slots = [];
     const [startHour, startMin] = studyData.settings.startTime.split(':').map(Number);
     let currentMinutes = startHour * 60 + startMin;
 
-    // 確保所有從輸入框拿到的值都是真正的數字型態
+    // 關鍵修正：將手 key 傳入的字串強制轉為數字
     const total = parseInt(studyData.settings.totalSlots) || 8;
     const classLen = parseInt(studyData.settings.classDuration) || 50;
     const restLen = parseInt(studyData.settings.restDuration) || 10;
@@ -30,10 +34,11 @@ function calculateTimeSlots() {
     const noonLen = parseInt(studyData.settings.noonDuration) || 70;
 
     for (let i = 1; i <= total; i++) {
+        // 計算這一節的開始與結束時間
         let startH = Math.floor(currentMinutes / 60).toString().padStart(2, '0');
         let startM = (currentMinutes % 60).toString().padStart(2, '0');
 
-        currentMinutes += classLen;
+        currentMinutes += classLen; // 這裡現在是安全的數學加法囉！
 
         let endH = Math.floor(currentMinutes / 60).toString().padStart(2, '0');
         let endM = (currentMinutes % 60).toString().padStart(2, '0');
@@ -43,16 +48,17 @@ function calculateTimeSlots() {
             time: `${startH}:${startM}~${endH}:${endM}`
         });
 
+        // 判談接下來是午休還是普通下課
         if (i === noonAfter) {
-            currentMinutes += noonLen;
+            currentMinutes += noonLen; // 加上午休時間
         } else {
-            currentMinutes += restLen;
+            currentMinutes += restLen; // 加上一般下課
         }
     }
     studyData.settings.timeSlots = slots;
 }
 
-// 初始檢查與防呆
+// 如果是一開始初始化，或是舊資料沒有時間引擎欄位，自動補齊並計算
 if (!studyData.settings.classDuration) {
     studyData.settings.totalSlots = 8;
     studyData.settings.startTime = "08:10";
@@ -61,14 +67,15 @@ if (!studyData.settings.classDuration) {
     studyData.settings.noonSlot = 4;
     studyData.settings.noonDuration = 70;
 }
-calculateTimeSlots();
+calculateTimeSlots(); // 確保每次載入都動態算好
 
 function saveData() {
     localStorage.setItem('studyTrophyData', JSON.stringify(studyData));
 }
 
-// 變更時間引擎設定 (修正版：加入強制的數值轉換)
+// 變更時間引擎設定 (完全對應手動 key-in 的 input 欄位)
 function updateTimeEngine() {
+    // 這裡點 value 拿到的都是使用者在網頁格子裡自己手 key 的數值
     studyData.settings.totalSlots = parseInt(document.getElementById('engine-slots').value) || 8;
     studyData.settings.startTime = document.getElementById('engine-start').value || "08:10";
     studyData.settings.classDuration = parseInt(document.getElementById('engine-class-len').value) || 50;
@@ -79,7 +86,7 @@ function updateTimeEngine() {
     calculateTimeSlots();
     saveData();
     initSchedule();
-    alert("時間引擎已重新計算並更新課表！(๑•̀ㅂ•́)و");
+    alert("時間引擎已重新計算並更新課表！(๑•̀ㅂ•́)ו");
 }
 
 function saveSemesterSettings() {
@@ -96,9 +103,7 @@ function saveSemesterSettings() {
     saveData();
 }
 
-// 週切換與日期引擎
-let currentWeekOffset = 0;
-
+// 週一錨點計算輔助
 function getMondayOfDate(targetDate) {
     const d = new Date(targetDate);
     const day = d.getDay();
@@ -106,6 +111,7 @@ function getMondayOfDate(targetDate) {
     return new Date(d.setDate(diff));
 }
 
+// 週數與日期切換控制
 function changeWeek(direction) {
     currentWeekOffset += direction;
     initSchedule();
@@ -116,9 +122,11 @@ function resetToThisWeek() {
     initSchedule();
 }
 
+// 自動計算畫面顯示的週數
 function updateCurrentWeekDisplay() {
     const start = new Date(studyData.settings.startDate);
     const now = new Date();
+    // 加上偏移量計算畫面上那一週的日期
     now.setDate(now.getDate() + (currentWeekOffset * 7));
 
     start.setHours(0, 0, 0, 0);
@@ -146,6 +154,7 @@ function updateCurrentWeekDisplay() {
     }
 }
 
+// 推算畫面中那一週的「週一到週五」實際日期
 function getDatesOfDisplayedWeek() {
     const now = new Date();
     now.setDate(now.getDate() + (currentWeekOffset * 7));
@@ -163,7 +172,7 @@ function getDatesOfDisplayedWeek() {
     return weekDates;
 }
 
-// 課表渲染與編輯
+// 初始化課表結構
 function initSchedule() {
     updateCurrentWeekDisplay();
 
@@ -220,7 +229,7 @@ function editSubjectOnly(cellId) {
     }
 }
 
-// 獎盃目標與提取
+// 提取科目與獎盃牆邏輯
 function getSubjectsFromSchedule() {
     const subjects = new Set();
     Object.values(studyData.schedule).forEach(cell => {

@@ -5,6 +5,30 @@
     <meta charset="UTF-8">
     <title>StudyTrophy - 管理中心</title>
     <link rel="stylesheet" href="css/style.css">
+    <style>
+        /* 新增：午休半透明分隔線樣式 */
+        .lunch-break-row {
+            background-color: rgba(0, 0, 0, 0.03);
+            /* 極淡的半透明黑，帶出層次 */
+            color: #718096;
+            font-size: 0.85rem;
+            font-weight: bold;
+            letter-spacing: 2px;
+            text-align: center;
+            height: 35px;
+        }
+
+        /* 讓午休列的上下邊框變得很淡，營造類似合併儲存格的視覺感 */
+        .lunch-break-row td {
+            border-top: 1px dashed rgba(0, 0, 0, 0.08) !important;
+            border-bottom: 1px dashed rgba(0, 0, 0, 0.08) !important;
+            border-left: none !important;
+            border-right: none !important;
+            pointer-events: none;
+            /* 讓午休列不可點擊 */
+            vertical-align: middle;
+        }
+    </style>
 </head>
 
 <body>
@@ -15,65 +39,58 @@
     </nav>
 
     <div id="current-week-info"
-        style="background:#e8f4fd; color:#2b6cb0; padding:12px; border-radius:8px; margin-bottom:20px; text-align:center; font-size:1.1rem; border:1px solid #bee3f8;">
+        style="background:#e8f4fd; color:#2b6cb0; padding:12px; border-radius:8px; margin-bottom:20px; text-align:center; border:1px solid #bee3f8;">
         載入時間引擎中...
     </div>
 
     <div class="container">
         <section class="schedule-section">
 
-            <div style="text-align: right; margin-bottom: 15px;">
-                <button onclick="toggleSetupPanel()"
-                    style="background:#4a5568; color:white; border:none; padding:8px 12px; border-radius:6px; cursor:pointer; font-weight:bold;">
-                    ⚙️ 修改課表時間與學期設定
-                </button>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <div id="current-mode-status" style="font-weight: bold; color: #4a5568;">
+                    目前的課表模式：📌 預設 13 節課時間表
+                </div>
+                <div>
+                    <button onclick="toggleSetupPanel()"
+                        style="background:#4a5568; color:white; border:none; padding:8px 12px; border-radius:6px; cursor:pointer; font-weight:bold;">
+                        ⚙️ 修改進階時間與自訂設定
+                    </button>
+                </div>
             </div>
 
             <div id="time-engine-panel" class="setup-panel"
                 style="display: none; background:#f8f9fa; padding:15px; border-radius:8px; margin-bottom:20px; font-size:0.85rem; line-height: 2; border: 1px solid #e2e8f0;">
                 <strong style="font-size:0.95rem; color:#2d3748;">⚙️ 課表自訂時間計算引擎 (手動鍵入)</strong>
+                <p style="color:#718096; margin: 5px 0 10px 0;">當你修改並儲存下方欄位時，系統將會切換至「自訂課表模式」。</p>
+
                 <div style="display:flex; gap:15px; flex-wrap:wrap; margin-top:10px;">
-
-                    <div>學期週數：
-                        <input type="number" id="setup-weeks" style="width:60px; padding:4px;" min="1" max="50"> 週
-                    </div>
-
-                    <div>開學日期：
-                        <input type="date" id="setup-start-date" style="padding:4px;">
-                    </div>
-
                     <div>每日節次：
                         <input type="number" id="engine-slots" style="width:60px; padding:4px;" min="1" max="24"> 節
                     </div>
-
                     <div>第一節始於：
                         <input type="time" id="engine-start" style="padding:4px;">
                     </div>
-
                     <div>上課長度：
                         <input type="number" id="engine-class-len" style="width:60px; padding:4px;" min="1"> 分鐘
                     </div>
-
                     <div>下課休息：
                         <input type="number" id="engine-rest-len" style="width:60px; padding:4px;" min="0"> 分鐘
                     </div>
-
                     <div>午休安排在：第
                         <input type="number" id="engine-noon-slot" style="width:60px; padding:4px;" min="1"> 節後
                     </div>
-
                     <div>午休時間：
                         <input type="number" id="engine-noon-len" style="width:60px; padding:4px;" min="0"> 分鐘
                     </div>
-
                 </div>
-                <div style="margin-top: 10px; display: flex; justify-content: space-between;">
-                    <button onclick="restoreDefaultEngineSettings()"
+
+                <div style="margin-top: 15px; display: flex; justify-content: space-between;">
+                    <button onclick="useSystemDefaultMode()"
                         style="background:#e53e3e; color:white; border:none; padding:6px 15px; border-radius:4px; cursor:pointer; font-weight:bold;">↩️
-                        回復預設</button>
+                        回復並使用「預設課表模式」</button>
                     <div>
-                        <button onclick="saveSemesterSettings(); updateTimeEngine();"
-                            style="background:#3182ce; color:white; border:none; padding:6px 15px; border-radius:4px; cursor:pointer; font-weight:bold;">套用並儲存</button>
+                        <button onclick="updateTimeEngineToCustom();"
+                            style="background:#3182ce; color:white; border:none; padding:6px 15px; border-radius:4px; cursor:pointer; font-weight:bold;">套用自訂模式</button>
                         <button onclick="toggleSetupPanel()"
                             style="background:#a0aec0; color:white; border:none; padding:6px 15px; border-radius:4px; cursor:pointer; font-weight:bold; margin-left:5px;">取消關閉</button>
                     </div>
@@ -144,29 +161,38 @@
     <script>
         function toggleSetupPanel() {
             const panel = document.getElementById('time-engine-panel');
-            if (panel.style.display === 'none') {
-                panel.style.display = 'block';
-            } else {
-                panel.style.display = 'none';
-            }
+            panel.style.display = (panel.style.display === 'none') ? 'block' : 'none';
         }
 
-        // 把資料庫的數值載入到輸入框中
         function loadSettingsToInputs() {
-            document.getElementById('setup-weeks').value = studyData.settings.totalWeeks;
-            document.getElementById('setup-start-date').value = studyData.settings.startDate;
-            document.getElementById('engine-slots').value = studyData.settings.totalSlots;
-            document.getElementById('engine-start').value = studyData.settings.startTime;
-            document.getElementById('engine-class-len').value = studyData.settings.classDuration;
-            document.getElementById('engine-rest-len').value = studyData.settings.restDuration;
-            document.getElementById('engine-noon-slot').value = studyData.settings.noonSlot;
-            document.getElementById('engine-noon-len').value = studyData.settings.noonDuration;
+            if (studyData.settings.customSettings) {
+                document.getElementById('engine-slots').value = studyData.settings.customSettings.totalSlots;
+                document.getElementById('engine-start').value = studyData.settings.customSettings.startTime;
+                document.getElementById('engine-class-len').value = studyData.settings.customSettings.classDuration;
+                document.getElementById('engine-rest-len').value = studyData.settings.customSettings.restDuration;
+                document.getElementById('engine-noon-slot').value = studyData.settings.customSettings.noonSlot;
+                document.getElementById('engine-noon-len').value = studyData.settings.customSettings.noonDuration;
+            } else {
+                document.getElementById('engine-slots').value = 8;
+                document.getElementById('engine-start').value = "08:10";
+                document.getElementById('engine-class-len').value = 50;
+                document.getElementById('engine-rest-len').value = 10;
+                document.getElementById('engine-noon-slot').value = 4;
+                document.getElementById('engine-noon-len').value = 70;
+            }
         }
 
         window.onload = () => {
             loadSettingsToInputs();
             initSchedule();
             renderTrophies();
+
+            const statusDiv = document.getElementById('current-mode-status');
+            if (studyData.settings.isCustomMode) {
+                statusDiv.innerText = "目前的課表模式：🛠️ 自訂計算模式";
+            } else {
+                statusDiv.innerText = "目前的課表模式：📌 預設 13 節課時間表";
+            }
         };
     </script>
 </body>

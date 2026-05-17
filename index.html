@@ -42,7 +42,8 @@
     <div class="container">
         <section class="schedule-section">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <div id="current-mode-status" style="font-weight: bold; color: #4a5568;">
+                <div id="current-mode-status"
+                    style="font-weight: bold; color: #4a5568; background: #edf2f7; padding: 5px 14px; border-radius: 20px; display: inline-block;">
                     目前的課表模式：📌 預設 13 節課時間表
                 </div>
                 <div>
@@ -63,6 +64,13 @@
                     <div>下課休息：<input type="number" id="engine-rest-len" style="width:60px; padding:4px;"> 分鐘</div>
                     <div>午休安排在：第 <input type="number" id="engine-noon-slot" style="width:60px; padding:4px;"> 節後</div>
                     <div>午休時間：<input type="number" id="engine-noon-len" style="width:60px; padding:4px;"> 分鐘</div>
+
+                    <hr style="border:none; border-top:1px dashed #e2e8f0; margin:15px 0;">
+                    <div style="display:flex; gap:15px; flex-wrap:wrap;">
+                        <div>學期開學日：<input type="date" id="semester-start-date" style="padding:4px;"></div>
+                        <div>學期總週數：<input type="number" id="semester-total-weeks" style="width:60px; padding:4px;"
+                                min="1" max="30"> 週</div>
+                    </div>
                 </div>
                 <div style="margin-top: 15px; display: flex; justify-content: space-between;">
                     <button onclick="useSystemDefaultMode()"
@@ -87,6 +95,8 @@
                         <th>三</th>
                         <th>四</th>
                         <th>五</th>
+                        <th>六</th>
+                        <th>日</th>
                     </tr>
                 </thead>
                 <tbody id="schedule-body"></tbody>
@@ -96,8 +106,8 @@
         <section class="trophy-section">
             <h2>🏆 獎盃牆</h2>
             <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                <button class="btn-add" onclick="showAddSubjectModal()">＋ 新增科目目標</button>
-                <button class="btn-add" onclick="showAddEventModal()" style="background: #2b8a3e;">📅 新增行事曆事件</button>
+                <button class="btn-add" onclick="showAddModal()">＋ 新增科目目標</button>
+                <button class="btn-add" onclick="showEventModal()" style="background: #2b8a3e;">📅 新增行事曆事件</button>
             </div>
 
             <div id="trophy-grid" class="trophy-grid"></div>
@@ -108,30 +118,83 @@
             </div>
 
             <div class="admin-controls" style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px;">
-                <button onclick="clearStudyLogs()" class="btn-outline">🗑️ 清除讀書紀錄</button>
+                <button onclick="clearLogs()" class="btn-outline">🗑️ 清除讀書紀錄</button>
                 <button onclick="resetEverything()" class="btn-danger">⚠️ 重設整個系統</button>
             </div>
         </section>
     </div>
 
     <div id="custom-click-menu" class="custom-click-menu">
-        <div class="click-menu-item" onclick="handleContextAction('pin')">📌 <span id="ctx-pin-text">置頂排程</span></div>
-        <div class="click-menu-item" onclick="handleContextAction('edit')">📝 編輯排程</div>
-        <div class="click-menu-item danger-action" onclick="handleContextAction('delete')">🗑️ 刪除排程</div>
+        <div class="click-menu-item" onclick="executeMenuEdit()">📝 編輯行程</div>
+        <div class="click-menu-item" onclick="executeMenuTogglePin()">📌 置頂 / 取消置頂</div>
+        <div class="click-menu-item danger-action" onclick="executeMenuDelete()">🗑️ 刪除排程</div>
     </div>
-
     <div id="add-modal" class="modal" style="display:none;">
         <h3>新增科目目標</h3>
-        <select id="new-subject-name" style="width:100%; padding:8px;"></select><br><br>
-        <input type="text" id="new-subject-start" placeholder="起始進度"><br><br>
-        <input type="text" id="new-subject-end" placeholder="目標進度"><br><br>
+        <select id="new-subject-name" style="width: 100%; padding: 8px; margin-bottom: 15px;">
+            <option value="">-- 請選擇課表科目 --</option>
+        </select><br>
+        <input type="text" id="new-subject-start" placeholder="起始進度" value="0"><br><br>
+        <input type="text" id="new-subject-target" placeholder="目標進度"><br><br>
         <button onclick="addSubject()">儲存目標</button>
+        <button onclick="hideModals()">取消</button>
+    </div>
+    <div id="edit-event-modal" class="modal" style="display:none;">
+        <h3>📝 編輯行事曆事件</h3>
+        <input type="hidden" id="edit-event-id">
+        <label>選擇日期：</label><br>
+        <input type="date" id="edit-event-date" style="width:93%; padding:8px; margin-bottom:12px;"><br>
+        <div style="display: flex; gap: 10px;">
+            <div style="flex: 1;">
+                <label>開始時間：</label><br>
+                <input type="time" id="edit-event-start-time" style="width:85%; padding:8px; margin-bottom:12px;">
+            </div>
+            <div style="flex: 1;">
+                <label>結束時間：</label><br>
+                <input type="time" id="edit-event-end-time" style="width:85%; padding:8px; margin-bottom:12px;">
+            </div>
+        </div>
+        <label>事件內容：</label><br>
+        <input type="text" id="edit-event-note" style="width:93%; padding:8px; margin-bottom:12px;"><br>
+
+        <label>自訂標籤顏色：</label>
+        <div class="color-picker-row" style="margin-bottom: 20px;">
+            <div class="color-dot edit-color-dot" data-color="#4299e1" style="background:#4299e1;"
+                onclick="selectEditColor(this, '#4299e1')" title="莫蘭迪藍"></div>
+            <div class="color-dot edit-color-dot" data-color="#ed8936" style="background:#ed8936;"
+                onclick="selectEditColor(this, '#ed8936')" title="琥珀橙"></div>
+            <div class="color-dot edit-color-dot" data-color="#48bb78" style="background:#48bb78;"
+                onclick="selectEditColor(this, '#48bb78')" title="松石綠"></div>
+            <div class="color-dot edit-color-dot" data-color="#9f7aea" style="background:#9f7aea;"
+                onclick="selectEditColor(this, '#9f7aea')" title="浪漫紫"></div>
+            <div class="color-dot edit-color-dot" data-color="#f56565" style="background:#f56565;"
+                onclick="selectEditColor(this, '#f56565')" title="珊瑚紅"></div>
+        </div>
+
+        <button onclick="saveEditedCalendarEvent()" style="background: #3182ce; color: white;">儲存修改</button>
+        <button onclick="hideModals()">取消</button>
+    </div>
+
+    <div id="manual-update-modal" class="modal" style="display:none;">
+        <h3>🛠️ 手動微調目前進度</h3>
+        <input type="number" step="0.1" id="manual-progress-input"><br><br>
+        <button onclick="saveManualProgress()">儲存修改</button>
+        <button onclick="hideModals()">取消</button>
+    </div>
+
+    <div id="schedule-cell-modal" class="modal" style="display:none;">
+        <h3>📝 編輯課表課程</h3>
+        <input type="hidden" id="editing-cell-id">
+        <input type="text" id="cell-subject-input" placeholder="課程名稱"><br><br>
+        <input type="number" id="cell-duration-input" placeholder="持續節數" min="1" max="5" value="1"><br><br>
+        <input type="text" id="cell-room-input" placeholder="教室名稱 / 地點"><br><br>
+        <button onclick="saveCellSubject()" style="background: #3182ce; color: white;">儲存課程</button>
+        <button onclick="clearCellSubject()" class="btn-danger" style="border: 1px solid #ffcdd2;">清除課程</button>
         <button onclick="hideModals()">取消</button>
     </div>
 
     <div id="event-modal" class="modal" style="display:none;">
         <h3 id="event-modal-title">📅 新增行事曆事件</h3>
-        <input type="hidden" id="editing-event-id">
         <label>選擇日期：</label><br>
         <input type="date" id="event-date" style="width:93%; padding:8px; margin-bottom:12px;"><br>
         <div style="display: flex; gap: 10px;">
@@ -149,16 +212,16 @@
 
         <label>自訂標籤顏色：</label>
         <div class="color-picker-row" style="margin-bottom: 20px;">
-            <div class="color-dot" data-color="#e53e3e" style="background:#e53e3e;"
-                onclick="selectModalColor('#e53e3e')" title="珊瑚紅"></div>
-            <div class="color-dot" data-color="#dd6b20" style="background:#dd6b20;"
-                onclick="selectModalColor('#dd6b20')" title="琥珀橙"></div>
-            <div class="color-dot" data-color="#319795" style="background:#319795;"
-                onclick="selectModalColor('#319795')" title="松石綠"></div>
-            <div class="color-dot" data-color="#4299e1" style="background:#4299e1;"
-                onclick="selectModalColor('#4299e1')" title="莫蘭迪藍"></div>
-            <div class="color-dot" data-color="#805ad5" style="background:#805ad5;"
-                onclick="selectModalColor('#805ad5')" title="浪漫紫"></div>
+            <div class="color-dot active" data-color="#4299e1" style="background:#4299e1;"
+                onclick="selectColor(this, '#4299e1')" title="莫蘭迪藍"></div>
+            <div class="color-dot" data-color="#ed8936" style="background:#ed8936;"
+                onclick="selectColor(this, '#ed8936')" title="琥珀橙"></div>
+            <div class="color-dot" data-color="#48bb78" style="background:#48bb78;"
+                onclick="selectColor(this, '#48bb78')" title="松石綠"></div>
+            <div class="color-dot" data-color="#9f7aea" style="background:#9f7aea;"
+                onclick="selectColor(this, '#9f7aea')" title="浪漫紫"></div>
+            <div class="color-dot" data-color="#f56565" style="background:#f56565;"
+                onclick="selectColor(this, '#f56565')" title="珊瑚紅"></div>
         </div>
 
         <button onclick="addCalendarEvent()" style="background: #2b8a3e; color: white;">儲存排程</button>
@@ -172,16 +235,27 @@
             panel.style.display = (panel.style.display === 'none') ? 'block' : 'none';
         }
         window.onload = () => {
-            if (studyData.settings.customSettings) {
-                document.getElementById('engine-slots').value = studyData.settings.customSettings.totalSlots;
-                document.getElementById('engine-start').value = studyData.settings.customSettings.startTime;
-                document.getElementById('engine-class-len').value = studyData.settings.customSettings.classDuration;
-                document.getElementById('engine-rest-len').value = studyData.settings.customSettings.restDuration;
-                document.getElementById('engine-noon-slot').value = studyData.settings.customSettings.noonSlot;
-                document.getElementById('engine-noon-len').value = studyData.settings.customSettings.noonDuration;
+            const localData = JSON.parse(localStorage.getItem('studyTrophyData')) || {};
+            const settings = localData.settings || { isCustomMode: false, customSettings: { totalSlots: 8, startTime: "08:10", classDuration: 50, restDuration: 10, noonSlot: 4, noonDuration: 70 } };
+            const config = settings.customSettings || { totalSlots: 8, startTime: "08:10", classDuration: 50, restDuration: 10, noonSlot: 4, noonDuration: 70 };
+
+            if (document.getElementById('engine-slots')) {
+                document.getElementById('engine-slots').value = config.totalSlots;
+                document.getElementById('engine-start').value = config.startTime;
+                document.getElementById('engine-class-len').value = config.classDuration;
+                document.getElementById('engine-rest-len').value = config.restDuration;
+                document.getElementById('engine-noon-slot').value = config.noonSlot;
+                document.getElementById('engine-noon-len').value = config.noonDuration;
             }
-            initSchedule(); renderTrophies(); renderGlobalEventList();
-            document.getElementById('current-mode-status').innerText = studyData.settings.isCustomMode ? "目前的課表模式：🛠️ 自訂計算模式" : "目前的課表模式：📌 預設 13 節課時間表";
+
+            if (typeof initSchedule === 'function') initSchedule();
+            if (typeof renderTrophies === 'function') renderTrophies();
+            if (typeof renderGlobalEventList === 'function') renderGlobalEventList();
+
+            const modeStatus = document.getElementById('current-mode-status');
+            if (modeStatus) {
+                modeStatus.innerText = settings.isCustomMode ? "目前的課表模式：🛠️ 自訂計算模式" : "目前的課表模式：📌 預設 13 節課時間表";
+            }
         };
     </script>
 </body>

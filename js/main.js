@@ -355,7 +355,10 @@ function editSubjectOnly(cellId) {
 
     document.getElementById('editing-cell-id').value = cellId;
     document.getElementById('cell-subject-input').value = data.name || '';
-    document.getElementById('cell-duration-input').value = data.duration || 1;
+
+    // 🎯 修改這裡：如果原本這格沒課，就讓欄位留空（顯示 Placeholder 底字）；有課才帶入原本的節數
+    document.getElementById('cell-duration-input').value = data.name ? (data.duration || 1) : '';
+
     document.getElementById('cell-room-input').value = data.room || '';
 
     document.getElementById('schedule-cell-modal').style.display = 'block';
@@ -574,7 +577,7 @@ function addSubject() {
 
     studyData.subjects.push({ id: Date.now(), name, start, current: start, end });
     saveData();
-    renderTrophies();
+    //renderTrophies();
     hideModals();
 
     // 儲存後將輸入框復原
@@ -636,7 +639,7 @@ function deleteSubject(id) {
     if (confirm('❌ 確定要刪除此科目目標嗎？')) {
         studyData.subjects = studyData.subjects.filter(s => s.id !== id);
         saveData();
-        renderTrophies();
+        //renderTrophies();
     }
 }
 function clearStudyLogs() { if (confirm('確定要清除所有讀書紀錄嗎？')) { studyData.logs = []; saveData(); location.reload(); } }

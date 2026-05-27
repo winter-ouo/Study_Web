@@ -566,23 +566,37 @@ function showAddModal() {
     document.getElementById('add-modal').style.display = 'block';
 }
 
+// 🎯 兩邊頁面完美相容的 addSubject
 function addSubject() {
-    const name = document.getElementById('new-subject-name').value.trim();
-    const start = document.getElementById('new-subject-start').value.trim();
-    const end = document.getElementById('new-subject-target').value.trim();
+    const nameEl = document.getElementById('new-subject-name');
+    if (!nameEl) return;
+    const name = nameEl.value.trim();
 
-    // 🎯 加上如果沒選科目的提示
-    if (!name) { alert('請選擇一個課表科目！'); return; }
+    const start = document.getElementById('new-subject-start')
+        ? document.getElementById('new-subject-start').value.trim()
+        : "0";
+
+    // 💡 防呆相容：如果 index 用的 target 存在就抓它，不然就抓 tomato 用的 end！
+    const endEl = document.getElementById('new-subject-target') || document.getElementById('new-subject-end');
+    const end = endEl ? endEl.value.trim() : "";
+
+    if (!name) {
+        alert(nameEl.tagName === "SELECT" ? '請選擇一個課表科目！' : '請填寫科目名稱！');
+        return;
+    }
     if (!end) { alert('請填寫目標進度！'); return; }
 
     studyData.subjects.push({ id: Date.now(), name, start, current: start, end });
     saveData();
-    //renderTrophies();
+
+    // 依據當前畫面擁有的元件動態重新渲染，避免在 tomato 頁面找不到 trophy-grid 噴錯
+    if (typeof renderTrophies === 'function') renderTrophies();
+
     hideModals();
 
-    // 儲存後將輸入框復原
-    document.getElementById('new-subject-start').value = "0";
-    document.getElementById('new-subject-target').value = "";
+    // 儲存後將輸入框復原（有欄位才復原）
+    if (document.getElementById('new-subject-start')) document.getElementById('new-subject-start').value = "0";
+    if (endEl) endEl.value = "";
 }
 
 function renderTrophies() {
@@ -669,13 +683,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    const subjectEndInput = document.getElementById('new-subject-target');
+    const subjectEndInput = document.getElementById('new-subject-target') || document.getElementById('new-subject-end');
     if (subjectEndInput) {
         subjectEndInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') { e.preventDefault(); addSubject(); }
         });
     }
-
     const engineIds = ['engine-slots', 'engine-start', 'engine-class-len', 'engine-rest-len', 'engine-noon-slot', 'engine-noon-len'];
     engineIds.forEach(id => {
         const inputEl = document.getElementById(id);

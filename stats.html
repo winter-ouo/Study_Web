@@ -3,125 +3,43 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>StudyTrophy - 數據分析</title>
     <link rel="stylesheet" href="css/style.css">
-    <!-- 引入 Chart.js 庫 -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        :root {
-            --bg-color: #f4f7f6;
-            --card-bg: #ffffff;
-        }
-
-        body {
-            font-family: "Microsoft JhengHei", sans-serif;
-            background: var(--bg-color);
-            margin: 0;
-            padding: 20px;
-            text-align: center;
-        }
-
-        nav {
-            margin-bottom: 30px;
-        }
-
-        nav a {
-            margin: 0 15px;
-            text-decoration: none;
-            color: #333;
-            font-weight: bold;
-        }
-
-        .chart-container {
-            background: var(--card-bg);
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-            max-width: 900px;
-            margin: 0 auto;
-        }
-
-        h2 {
-            color: #2c3e50;
-            margin-bottom: 25px;
-        }
-
-        .summary-info {
-            margin-top: 20px;
-            font-size: 1.1rem;
-            color: #7f8c8d;
-        }
-    </style>
 </head>
 
 <body>
-
     <nav>
         <a href="index.html">📅 課表進度</a>
         <a href="tomato.html">🍅 番茄鐘</a>
         <a href="stats.html">📊 數據分析</a>
     </nav>
 
-    <div class="chart-container">
-        <h2>📊 本週讀書時數統計 (๑•̀ㅂ•́)و</h2>
-        <canvas id="weeklyChart"></canvas>
-        <div class="summary-info" id="total-info">載入中...</div>
+    <div id="current-week-info"
+        style="background: #ebf8ff; border: 1px solid #bee3f8; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center; color: #2b6cb0;">
+        <button onclick="changeWeek(-1)"
+            style="padding:6px 12px; cursor:pointer; background: #3182ce; color: white; border: none; border-radius: 4px; font-weight: bold;">◀
+            上一週</button>
+        <span id="week-range-text" style="margin: 0 15px; font-weight:bold; font-size:1.1rem;">📅 數據引擎載入中...</span>
+        <button onclick="changeWeek(1)"
+            style="padding:6px 12px; cursor:pointer; background: #3182ce; color: white; border: none; border-radius: 4px; font-weight: bold;">下一週
+            ▶</button>
+        <button id="return-this-week-btn" onclick="resetToThisWeek()"
+            style="margin-left:10px; font-size:0.8rem; padding:4px 8px; cursor:pointer; background: #e2e8f0; color: #4a5568; border: none; border-radius: 4px; display: none;">返回本週</button>
     </div>
 
-    <!-- 必須先載入 main.js 以取得 studyData -->
-    <script src="js/main.js"></script>
-    <script>
-        window.onload = () => {
-            renderWeeklyChart();
-        };
+    <div class="container" style="display: block; max-width: 800px; margin: 0 auto;">
+        <section class="schedule-section" style="width: 100%; box-sizing: border-box;">
+            <h2>📊 本週專注時數統計</h2>
+            <h3 id="total-info" style="color: #2d3748; margin-bottom: 20px;">本週總計專注：0 分鐘</h3>
 
-        function renderWeeklyChart() {
-            const ctx = document.getElementById('weeklyChart').getContext('2d');
+            <div style="position: relative; width: 100%; height: 400px;">
+                <canvas id="weeklyChart"></canvas>
+            </div>
+        </section>
+    </div>
 
-            // 1. 取得過去 7 天的日期標籤
-            const labels = [];
-            for (let i = 6; i >= 0; i--) {
-                const d = new Date();
-                d.setDate(d.getDate() - i);
-                labels.push(d.toISOString().split('T')[0]);
-            }
-
-            // 2. 整理 localStorage 裡的數據
-            // 初始化每天的時數為 0
-            const dailyMinutes = labels.map(date => {
-                const dayLogs = studyData.logs.filter(log => log.date === date);
-                return dayLogs.reduce((sum, log) => sum + log.duration, 0);
-            });
-
-            const totalSum = dailyMinutes.reduce((a, b) => a + b, 0);
-            document.getElementById('total-info').innerText = `本週總計專注：${totalSum} 分鐘`;
-
-            // 3. 繪製圖表
-            new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels.map(date => date.slice(5)), // 只顯示 月-日
-                    datasets: [{
-                        label: '專注分鐘數',
-                        data: dailyMinutes,
-                        backgroundColor: '#ffcc00', // 金色
-                        borderColor: '#f39c12',
-                        borderWidth: 1,
-                        borderRadius: 5
-                    }]
-                },
-                options: {
-                    scales: {
-                        y: { beginAtZero: true, title: { display: true, text: '分鐘' } }
-                    },
-                    plugins: {
-                        legend: { display: false }
-                    }
-                }
-            });
-        }
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="js/stats.js"></script>
 </body>
 
 </html>
